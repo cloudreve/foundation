@@ -1,5 +1,8 @@
 # Cloudreve Foundation
 
+> [!IMPORTANT]
+> Under active development. Features and interfaces may change. Stay tuned for updates.
+
 Shared development infrastructure for Cloudreve projects. Independent packages for code quality, package verification, and isolated Community test fixtures.
 
 | Package                                  | Scope                                                                     |
