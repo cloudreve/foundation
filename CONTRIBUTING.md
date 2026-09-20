@@ -28,6 +28,6 @@ Every resource carries owner and fixture labels. Cleanup verifies ownership befo
 
 ## Packages
 
-`mise run package:check` packs each workspace, installs it into a separate temporary consumer, verifies installed bytes and public exports, and writes checksummed artifacts under `.artifacts/packages/`. Consumers update vendored artifacts and lockfiles explicitly.
+`mise run package:check` packs each workspace, installs it into a separate temporary consumer, verifies installed bytes and public exports, and writes checksummed artifacts under `.artifacts/packages/`. Consumers use versioned release URLs and committed lockfiles.
 
-Release tags match the workspace version. Release workflows prepare artifacts for review; registry publication is a separate operation.
+Release tags match the workspace version. Release workflows validate packages on all three platforms before publishing GitHub release archives. npm publication is separate.
