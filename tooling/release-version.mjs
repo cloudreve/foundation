@@ -12,6 +12,7 @@ export function releaseVersion(current, explicit = "", bump = "none") {
     const parts = value.split(".").map(Number);
 
     assert(parts.every(Number.isSafeInteger), "Version component exceeds integer range");
+    assert.equal(value, parts.join("."), "Expected a canonical semantic version");
 
     return parts;
   };

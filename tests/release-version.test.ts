@@ -17,6 +17,7 @@ it("rejects ambiguous, invalid, decreasing and overflowing release requests", ()
     ["2.0.0", "patch"],
     ["2.0.0", "other"],
     ["01.0.0", "none"],
+    ["1.2.3\n", "none"],
     ["1.0.0-beta", "none"],
     ["0.9.0", "none"],
     ["99999999999999999.0.0", "none"],
