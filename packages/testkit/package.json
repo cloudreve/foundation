@@ -1,0 +1,41 @@
+{
+  "name": "@cloudreve/testkit",
+  "version": "0.1.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./manifest": "./dist/manifest.js",
+    "./community": "./dist/community.js",
+    "./command": "./dist/command.js",
+    "./parity-services": "./dist/parity-services.js",
+    "./oauth-fixture": "./dist/oauth-fixture.js",
+    "./encryption-fixture": "./dist/encryption-fixture.js",
+    "./metadata-fixture": "./dist/metadata-fixture.js",
+    "./guest-archive-fixture": "./dist/guest-archive-fixture.js",
+    "./linux-docker": "./dist/linux-docker.js"
+  },
+  "dependencies": {
+    "get-port": "7.2.0",
+    "proper-lockfile": "4.1.2",
+    "testcontainers": "12.1.0",
+    "valibot": "1.5.0",
+    "write-file-atomic": "7.0.1"
+  },
+  "devDependencies": {
+    "@types/dockerode": "4.0.1",
+    "@types/write-file-atomic": "4.0.3",
+    "@types/proper-lockfile": "4.1.4"
+  },
+  "description": "Shared Cloudreve fixture lifecycle and isolated Docker E2E tooling.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudreve/foundation.git",
+    "directory": "packages/testkit"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

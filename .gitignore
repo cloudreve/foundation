@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.artifacts/
+.artifact-cache/
+mise.local.toml
+/cloudreve-org.code-workspace
+
+# Private coordination archives and local agent instructions
+.local/
+/AGENTS.md

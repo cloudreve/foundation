@@ -1,0 +1,26 @@
+services:
+  cloudreve:
+    image: ${CR_IMAGE}
+    ports:
+      - "127.0.0.1:${CR_BACKEND_PORT:-0}:5212"
+    environment:
+      CR_SETTING_DEFAULT_siteName: ${CR_RUN_ID}
+      CR_CONF_CORS.AllowOrigins: ${CR_CORS_ORIGIN:-http://localhost}
+    labels:
+      dev.cloudreve.worktree: ${CR_OWNER}
+      dev.cloudreve.role: ${CR_ROLE}
+      dev.cloudreve.fixture: ${CR_RUN_ID}
+    volumes:
+      - data:/cloudreve/data
+volumes:
+  data:
+    labels:
+      dev.cloudreve.worktree: ${CR_OWNER}
+      dev.cloudreve.role: ${CR_ROLE}
+      dev.cloudreve.fixture: ${CR_RUN_ID}
+networks:
+  default:
+    labels:
+      dev.cloudreve.worktree: ${CR_OWNER}
+      dev.cloudreve.role: ${CR_ROLE}
+      dev.cloudreve.fixture: ${CR_RUN_ID}

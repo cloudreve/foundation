@@ -1,0 +1,62 @@
+[tools]
+node = "24.5.0"
+bun = "1.4.0"
+lefthook = "2.1.4"
+
+[settings]
+lockfile = true
+
+[tasks.setup]
+run = ["bun install --frozen-lockfile", "lefthook install"]
+[tasks.doctor]
+run = ["node --version", "bun --version", "docker version"]
+[tasks.build]
+run = "bun run build"
+[tasks.typecheck]
+run = "bun run typecheck"
+[tasks.test]
+run = "bun run test"
+[tasks.check]
+run = "bun run check"
+[tasks.format]
+run = ["bun run lint:fix", "bun run format", "bun run lint:fix"]
+[tasks."format:check"]
+run = "bun run format:check"
+[tasks."arch:check"]
+depends = ["build"]
+run = "bun run arch:check"
+[tasks."arch:test"]
+run = "bunx vitest run tests/architecture.test.ts"
+[tasks."fixture:start"]
+depends = ["build"]
+run = "bun run fixture start"
+[tasks."fixture:stop"]
+depends = ["build"]
+run = "bun run fixture stop"
+[tasks."fixture:clean"]
+depends = ["build"]
+run = "bun run fixture clean"
+[tasks."package:check"]
+depends = ["build"]
+run = "node tests/package.mjs"
+[tasks."test:e2e"]
+depends = ["build"]
+run = "node tests/fixture-e2e.mjs"
+
+[tasks.lint]
+run = "bun run lint"
+[tasks."test:unit"]
+run = "bun run test"
+[tasks."fixture:serve"]
+depends = ["build"]
+run = "bun run fixture serve"
+
+[tasks."test:mutation"]
+run = "bun run test:mutation"
+
+
+[tasks."lint:fix"]
+run = "bun run lint:fix"
+
+[tasks."ci:local"]
+run = "bash tooling/ci/act.sh"

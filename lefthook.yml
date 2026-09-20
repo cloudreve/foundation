@@ -1,0 +1,8 @@
+pre-commit:
+  commands:
+    check:
+      run: mise run check
+commit-msg:
+  commands:
+    conventional:
+      run: sh .githooks/commit-msg "{1}"

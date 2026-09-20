@@ -1,0 +1,79 @@
+name: Foundation CI
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v3
+        with:
+          version: 2026.9.11
+      - run: mise exec -- bun install --frozen-lockfile
+      - name: Verify release version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: mise exec -- node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; for (const name of ['quality', 'testkit']) assert.equal(process.env.GITHUB_REF_NAME, 'v' + JSON.parse(fs.readFileSync('packages/' + name + '/package.json')).version)"
+      - run: mise run check
+      - run: mise run package:check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: foundation-packages
+          include-hidden-files: true
+          path: |
+            .artifacts/packages/*-????????????.tgz
+            .artifacts/packages/*.sha256
+            .artifacts/packages/manifest.json
+            coverage/coverage-summary.json
+          if-no-files-found: error
+  community:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        version: [4.17.0, 4.18.0]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v3
+        with:
+          version: 2026.9.11
+      - run: echo "CR_CI_RUN_ID=foundation-ci-$(cat /proc/sys/kernel/random/uuid)" >> "$GITHUB_ENV"
+      - run: mise exec -- bun install --frozen-lockfile
+      - run: mise run build
+      - name: Isolated Community lifecycle
+        env:
+          CR_CI_VERSION: ${{ matrix.version }}
+        run: timeout --signal=TERM --kill-after=30s 15m mise exec -- node tests/ci-e2e.mjs
+      - name: Remove owned fixture resources
+        if: always()
+        run: CR_CI_CLEANUP_PARENT=0 bash tooling/ci/cleanup.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: community-${{ matrix.version }}
+          path: .artifacts/ci/community-${{ matrix.version }}.json
+          if-no-files-found: error
+  draft:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [quality, community]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: foundation-packages
+          path: release
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" release/.artifacts/packages/*.tgz release/.artifacts/packages/*.sha256 release/.artifacts/packages/manifest.json --draft --verify-tag --generate-notes

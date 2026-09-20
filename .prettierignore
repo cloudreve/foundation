@@ -1,0 +1,9 @@
+node_modules/
+**/dist/
+coverage/
+.artifacts/
+.artifact-cache/
+.local/
+AGENTS.md
+bun.lock
+mise.lock

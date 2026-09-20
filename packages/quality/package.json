@@ -1,0 +1,37 @@
+{
+  "name": "@cloudreve/quality",
+  "version": "0.1.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    "./eslint": "./dist/eslint.js",
+    "./dependencies": "./dist/dependencies.js",
+    "./artifacts": "./dist/artifacts.js",
+    "./prettier": "./dist/prettier.js"
+  },
+  "dependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "9.39.5",
+    "typescript-eslint": "8.69.0",
+    "globals": "17.12.0",
+    "@stylistic/eslint-plugin": "5.10.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=6.0.3 <7"
+  },
+  "description": "Shared code quality policies and package verification for Cloudreve development.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudreve/foundation.git",
+    "directory": "packages/quality"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.12"
+  }
+}
