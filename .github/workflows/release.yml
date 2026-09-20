@@ -56,7 +56,7 @@ jobs:
             echo "Release v$VERSION already exists" >&2
             exit 1
           fi
-      - name: Prepare exact candidate
+      - name: Set release version
         id: candidate
         env:
           VERSION: ${{ steps.version.outputs.version }}
@@ -114,4 +114,5 @@ jobs:
             "release/.artifacts/packages/cloudreve-quality-$VERSION.tgz.sha256" \
             "release/.artifacts/packages/cloudreve-testkit-$VERSION.tgz" \
             "release/.artifacts/packages/cloudreve-testkit-$VERSION.tgz.sha256" \
-            --target "$CANDIDATE" --generate-notes --title "v$VERSION"
+            --target "$CANDIDATE" --title "v$VERSION" \
+            --notes "Shared code-quality policies and isolated Cloudreve test fixtures. Package archives include SHA-256 checksums."

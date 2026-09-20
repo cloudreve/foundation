@@ -2,6 +2,7 @@ import { lstat, mkdir, readFile, realpath } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import writeFileAtomic from "write-file-atomic";
 import lockfile from "proper-lockfile";
+import { windowsPrivacy } from "./private-permissions.js";
 import { validateCredentialPaths, validateFixture, type Fixture } from "./manifest.js";
 
 export async function directory(path: string): Promise<string> {
@@ -13,13 +14,14 @@ export async function directory(path: string): Promise<string> {
     throw new Error("Redirected fixture directory");
   }
 
+  await windowsPrivacy(target, true, true);
+
   return target;
 }
 
 export async function readPrivate(path: string): Promise<unknown> {
   const info = await lstat(path);
 
-  // Windows file permissions use inherited ACLs rather than POSIX mode bits.
   if (
     !info.isFile() ||
     info.isSymbolicLink() ||
@@ -27,6 +29,8 @@ export async function readPrivate(path: string): Promise<unknown> {
   ) {
     throw new Error("Expected a regular private fixture file");
   }
+
+  await windowsPrivacy(path);
 
   return JSON.parse(await readFile(path, "utf8"));
 }

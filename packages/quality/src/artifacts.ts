@@ -11,12 +11,18 @@ import {
   realpath,
   writeFile,
 } from "node:fs/promises";
-import { basename, dirname, resolve, relative, isAbsolute, sep, posix } from "node:path";
+import { basename, dirname, resolve, relative, isAbsolute, sep, posix, join } from "node:path";
 
 const execute = promisify(execFile);
 
+// Git Bash tar treats Windows drive letters as remote hosts; use the native archive tool.
+const tarExecutable =
+  process.platform === "win32"
+    ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe")
+    : "tar";
+
 const tar = (args: string[]) =>
-  execute("tar", args, {
+  execute(tarExecutable, args, {
     encoding: "buffer",
     timeout: 30_000,
     maxBuffer: 64 * 1024 * 1024,

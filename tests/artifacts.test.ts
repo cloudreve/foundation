@@ -10,6 +10,11 @@ import {
   verifyArtifact,
 } from "../packages/quality/src/artifacts.js";
 
+const tarExecutable =
+  process.platform === "win32"
+    ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe")
+    : "tar";
+
 async function archive(path: string): Promise<void> {
   const { execFile } = await import("node:child_process");
   const { promisify } = await import("node:util");
@@ -21,7 +26,7 @@ async function archive(path: string): Promise<void> {
     JSON.stringify({ name: "@cloudreve/sdk", version: "0.1.0" }),
   );
 
-  await promisify(execFile)("tar", ["-czf", path, "-C", dir, "package"]);
+  await promisify(execFile)(tarExecutable, ["-czf", path, "-C", dir, "package"]);
 }
 
 let dir: string;
@@ -128,7 +133,7 @@ it("detects stale installed package bytes, extra files and symlinks", async () =
 
   const archive = join(dir, "package.tgz");
 
-  await exec("tar", ["-czf", archive, "-C", dir, "package"]);
+  await exec(tarExecutable, ["-czf", archive, "-C", dir, "package"]);
   await verifyInstalledPackage(archive, pack);
   await writeFile(join(pack, "dist/index.js"), "old cached bytes");
 
@@ -161,6 +166,6 @@ it("rejects archives outside the npm package root", async () => {
 
   const archive = join(dir, "foreign.tgz");
 
-  await promisify(execFile)("tar", ["-czf", archive, "-C", dir, "foreign"]);
+  await promisify(execFile)(tarExecutable, ["-czf", archive, "-C", dir, "foreign"]);
   await expect(verifyInstalledPackage(archive, dir)).rejects.toThrow("Unsafe");
 });

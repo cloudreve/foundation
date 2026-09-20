@@ -5,6 +5,11 @@ import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
 import { digest, verifyInstalledPackage } from "@cloudreve/quality/artifacts";
 
+const tarExecutable =
+  process.platform === "win32"
+    ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe")
+    : "tar";
+
 const root = process.cwd();
 const directory = await mkdtemp(join(tmpdir(), "cloudreve-packages-"));
 const destination = join(root, ".artifacts/packages");
@@ -35,7 +40,9 @@ try {
 
     await writeFile(archive + ".sha256", `${sha256}  ${filename}\n`);
 
-    const entries = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).trim().split("\n");
+    const entries = execFileSync(tarExecutable, ["-tzf", archive], { encoding: "utf8" })
+      .trim()
+      .split("\n");
 
     assert(
       entries.every((entry) =>

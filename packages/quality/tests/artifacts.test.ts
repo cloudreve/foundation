@@ -5,6 +5,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { digest, verifyArtifact, verifyInstalledPackage } from "../src/artifacts.js";
 
+const tarExecutable =
+  process.platform === "win32"
+    ? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "tar.exe")
+    : "tar";
+
 it("distinguishes installed dependencies from owned package files", async () => {
   const root = await mkdtemp(join(tmpdir(), "quality-package-"));
   const pkg = join(root, "package");
@@ -19,7 +24,7 @@ it("distinguishes installed dependencies from owned package files", async () => 
     );
 
     await writeFile(join(pkg, "index.js"), "export const sdk=true;");
-    execFileSync("tar", ["-czf", archive, "-C", root, "package"]);
+    execFileSync(tarExecutable, ["-czf", archive, "-C", root, "package"]);
     await mkdir(join(pkg, "node_modules/valibot"), { recursive: true });
     await writeFile(join(pkg, "node_modules/valibot/index.js"), "managed dependency");
     await verifyInstalledPackage(archive, pkg);
@@ -58,7 +63,7 @@ it("accepts only installer binary links backed by a declared dependency executab
     );
 
     await writeFile(join(pkg, "index.js"), "owned package bytes");
-    execFileSync("tar", ["-czf", archive, "-C", root, "package"]);
+    execFileSync(tarExecutable, ["-czf", archive, "-C", root, "package"]);
     await mkdir(join(dependency, "bin"), { recursive: true });
     await mkdir(join(pkg, "node_modules/.bin"));
 
@@ -118,7 +123,7 @@ it("rejects mismatched package identities even when archive bytes match", async 
       JSON.stringify({ name: "@cloudreve/sdk", version: "0.1.0" }),
     );
 
-    execFileSync("tar", ["-czf", archive, "-C", root, "package"]);
+    execFileSync(tarExecutable, ["-czf", archive, "-C", root, "package"]);
 
     const record = {
       schemaVersion: 1 as const,
@@ -152,7 +157,7 @@ it("verifies bundled dependencies and rejects unsafe dependency names", async ()
       JSON.stringify({ dependencies: { bundled: "1.0.0" } }),
     );
 
-    execFileSync("tar", ["-czf", archive, "-C", root, "package"]);
+    execFileSync(tarExecutable, ["-czf", archive, "-C", root, "package"]);
     await verifyInstalledPackage(archive, pkg);
     await writeFile(join(pkg, "node_modules/bundled/index.js"), "changed bytes");
     await expect(verifyInstalledPackage(archive, pkg)).rejects.toThrow("differs");
@@ -162,7 +167,7 @@ it("verifies bundled dependencies and rejects unsafe dependency names", async ()
       JSON.stringify({ dependencies: { "../escape": "1.0.0" } }),
     );
 
-    execFileSync("tar", ["-czf", archive, "-C", root, "package"]);
+    execFileSync(tarExecutable, ["-czf", archive, "-C", root, "package"]);
 
     await expect(verifyInstalledPackage(archive, pkg)).rejects.toThrow(
       "Invalid declared dependency",

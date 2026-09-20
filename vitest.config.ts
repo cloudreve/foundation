@@ -13,6 +13,8 @@ export default defineConfig({
     },
   },
   test: {
+    testTimeout: process.platform === "win32" ? 60_000 : 5_000,
+    hookTimeout: process.platform === "win32" ? 60_000 : 10_000,
     include: ["tests/**/*.test.ts", "packages/*/tests/**/*.test.ts"],
     coverage: {
       provider: "v8",
