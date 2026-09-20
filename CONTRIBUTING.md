@@ -8,6 +8,8 @@ Consumer repositories own their module maps, platform adapters, commands, and pr
 
 ## Validation
 
+Dependency lifecycle scripts are disabled during installation. Project builds run explicitly through mise; optional native dependency optimizations are not required for these checks.
+
 ```sh
 mise run format
 mise run check

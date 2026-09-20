@@ -7,7 +7,7 @@ lefthook = "2.1.4"
 lockfile = true
 
 [tasks.setup]
-run = ["bun install --frozen-lockfile", "lefthook install"]
+run = ["bun install --frozen-lockfile --ignore-scripts", "lefthook install"]
 [tasks.doctor]
 run = ["node --version", "bun --version", "docker version"]
 [tasks.build]

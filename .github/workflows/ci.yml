@@ -16,7 +16,7 @@ jobs:
       - uses: jdx/mise-action@v3
         with:
           version: 2026.9.11
-      - run: mise exec -- bun install --frozen-lockfile
+      - run: mise exec -- bun install --frozen-lockfile --ignore-scripts
       - name: Verify release version
         if: startsWith(github.ref, 'refs/tags/')
         run: mise exec -- node --input-type=module -e "import fs from 'node:fs'; import assert from 'node:assert/strict'; for (const name of ['quality', 'testkit']) assert.equal(process.env.GITHUB_REF_NAME, 'v' + JSON.parse(fs.readFileSync('packages/' + name + '/package.json')).version)"
@@ -46,7 +46,7 @@ jobs:
         with:
           version: 2026.9.11
       - run: echo "CR_CI_RUN_ID=foundation-ci-$(cat /proc/sys/kernel/random/uuid)" >> "$GITHUB_ENV"
-      - run: mise exec -- bun install --frozen-lockfile
+      - run: mise exec -- bun install --frozen-lockfile --ignore-scripts
       - run: mise run build
       - name: Isolated Community lifecycle
         env:
