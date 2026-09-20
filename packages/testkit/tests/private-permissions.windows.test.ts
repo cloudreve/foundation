@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { execFile } from "node:child_process";
-import { mkdtemp, writeFile, rm } from "node:fs/promises";
+import { mkdtemp, realpath, writeFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { directory } from "../src/storage.js";
@@ -9,7 +9,7 @@ import { windowsPrivacy } from "../src/private-permissions.js";
 it.runIf(process.platform === "win32")(
   "protects custom fixture directories and rejects broad file ACLs",
   async () => {
-    const root = await mkdtemp(join(tmpdir(), "testkit-acl-"));
+    const root = await realpath(await mkdtemp(join(tmpdir(), "testkit-acl-")));
     const path = join(root, "凭据's.json");
 
     try {
