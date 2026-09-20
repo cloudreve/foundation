@@ -33,7 +33,7 @@ mise run package:check
 
 ```sh
 mise run test:e2e
-mise run ci:local -- --job quality --matrix os:ubuntu-24.04
+mise run ci:local -- --job quality --matrix os:ubuntu-latest
 ```
 
 Native Docker tests cover persistent and ephemeral fixture lifecycle, isolation, recovery, and cleanup. GitHub Actions runs unit, build, and package checks on Linux, macOS, and Windows. Docker lifecycle checks run separately on Linux. Test state and reports stay under `.artifacts/`.
