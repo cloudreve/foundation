@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, writeFile, copyFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -10,6 +10,7 @@ const directory = await mkdtemp(join(tmpdir(), "cloudreve-packages-"));
 const destination = join(root, ".artifacts/packages");
 const records = [];
 
+await rm(destination, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
 
 try {
@@ -29,10 +30,9 @@ try {
 
     const packed = join(destination, `cloudreve-${name}-${metadata.version}.tgz`);
     const sha256 = await digest(packed);
-    const filename = `cloudreve-${name}-${metadata.version}-${sha256.slice(0, 12)}.tgz`;
-    const archive = join(destination, filename);
+    const filename = `cloudreve-${name}-${metadata.version}.tgz`;
+    const archive = packed;
 
-    await copyFile(packed, archive);
     await writeFile(archive + ".sha256", `${sha256}  ${filename}\n`);
 
     const entries = execFileSync("tar", ["-tzf", archive], { encoding: "utf8" }).trim().split("\n");
@@ -54,7 +54,11 @@ try {
       JSON.stringify({ private: true, type: "module" }),
     );
 
-    execFileSync("bun", ["add", "--ignore-scripts", archive], { cwd: consumer, stdio: "pipe" });
+    execFileSync("bun", ["add", "--ignore-scripts", "--linker", "hoisted", archive], {
+      cwd: consumer,
+      stdio: "pipe",
+    });
+
     await verifyInstalledPackage(archive, join(consumer, "node_modules/@cloudreve", name));
 
     const specifiers = Object.keys(metadata.exports).map((key) => metadata.name + key.slice(1));

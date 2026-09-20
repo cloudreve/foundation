@@ -30,7 +30,7 @@ it("distinguishes installed dependencies from owned package files", async () => 
     await rm(join(pkg, "node_modules/valibot"), { recursive: true });
     await mkdir(join(root, "installed"));
     await writeFile(join(root, "installed/index.js"), "dependency cache");
-    await symlink(join(root, "installed"), join(pkg, "node_modules/valibot"));
+    await symlink(join(root, "installed"), join(pkg, "node_modules/valibot"), "junction");
     await verifyInstalledPackage(archive, pkg);
     await rm(join(pkg, "node_modules/valibot"));
     await writeFile(join(pkg, "node_modules/valibot"), "not a package directory");

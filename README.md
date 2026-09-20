@@ -12,10 +12,11 @@ Foundation packages are development dependencies. Application runtime code and p
 ## Installation
 
 ```sh
-bun add --dev @cloudreve/quality @cloudreve/testkit
+bun add --dev https://github.com/cloudreve/foundation/releases/download/v1.0.0/cloudreve-quality-1.0.0.tgz
+bun add --dev https://github.com/cloudreve/foundation/releases/download/v1.0.0/cloudreve-testkit-1.0.0.tgz
 ```
 
-Before registry publication, versioned tarballs and SHA-256 checksums provide the same package boundary. SDK and CLI consume these artifacts without sibling source imports.
+[Releases](https://github.com/cloudreve/foundation/releases) include versioned tarballs and SHA-256 checksums. SDK and CLI consume these development packages without sibling source imports.
 
 ## Development
 
@@ -32,9 +33,11 @@ mise run package:check
 
 ```sh
 mise run test:e2e
-mise run ci:local -- --job community
+mise run ci:local -- --job quality --matrix os:ubuntu-24.04
 ```
 
-Native Docker tests cover persistent and ephemeral fixture lifecycle, isolation, recovery, and cleanup. CI validates the Linux Docker adapter against pinned Community versions. Test state and reports stay under `.artifacts/`.
+Native Docker tests cover persistent and ephemeral fixture lifecycle, isolation, recovery, and cleanup. GitHub Actions runs unit, build, and package checks on Linux, macOS, and Windows. Docker lifecycle checks run separately on Linux. Test state and reports stay under `.artifacts/`.
 
 [Architecture and contribution guide](CONTRIBUTING.md) · [MIT license](LICENSE)
+
+The release workflow accepts an explicit stable version or a patch, minor, or major increment. All three platforms validate the exact candidate before one GitHub release is created.

@@ -1,0 +1,117 @@
+name: Foundation release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Explicit stable version (for example 1.0.0)
+        type: string
+        default: ""
+      bump:
+        description: Version increment (leave none when version is explicit)
+        type: choice
+        options: [none, patch, minor, major]
+        default: none
+permissions:
+  contents: read
+concurrency:
+  group: foundation-release
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      ref: ${{ steps.candidate.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: jdx/mise-action@v3
+        with:
+          version: 2026.9.11
+      - name: Resolve candidate version
+        id: version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_BUMP: ${{ inputs.bump }}
+        run: |
+          mise exec -- node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import { releaseVersion } from './tooling/release-version.mjs';
+          const current = JSON.parse(fs.readFileSync('package.json')).version;
+          const version = releaseVersion(current, process.env.RELEASE_VERSION, process.env.RELEASE_BUMP);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${version}\n`);
+          NODE
+      - name: Reject existing release or tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          test -z "$(git tag --list "v$VERSION")"
+          gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[].tag_name' > /tmp/release-tags
+          if grep -Fxq "v$VERSION" /tmp/release-tags; then
+            echo "Release v$VERSION already exists" >&2
+            exit 1
+          fi
+      - name: Prepare exact candidate
+        id: candidate
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mise exec -- node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          for (const path of ['package.json', 'packages/quality/package.json', 'packages/testkit/package.json']) {
+            const pkg = JSON.parse(fs.readFileSync(path));
+            if (pkg.version !== process.env.VERSION) {
+              pkg.version = process.env.VERSION;
+              fs.writeFileSync(path, JSON.stringify(pkg, null, 2) + '\n');
+            }
+          }
+          NODE
+          if ! git diff --quiet -- package.json packages/quality/package.json packages/testkit/package.json; then
+            mise exec -- bun install --ignore-scripts
+            git add package.json packages/quality/package.json packages/testkit/package.json bun.lock
+            git diff --cached --check
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git commit -m "chore(release): v$VERSION"
+            git push origin HEAD:master
+          fi
+          echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+  validate:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.prepare.outputs.ref }}
+  publish:
+    needs: [prepare, validate]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.ref }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          name: foundation-Linux
+          path: release
+      - name: Publish validated packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          CANDIDATE: ${{ needs.prepare.outputs.ref }}
+        run: |
+          cd release/.artifacts/packages
+          sha256sum --check "cloudreve-quality-$VERSION.tgz.sha256" "cloudreve-testkit-$VERSION.tgz.sha256"
+          cd "$GITHUB_WORKSPACE"
+          gh release create "v$VERSION" \
+            "release/.artifacts/packages/cloudreve-quality-$VERSION.tgz" \
+            "release/.artifacts/packages/cloudreve-quality-$VERSION.tgz.sha256" \
+            "release/.artifacts/packages/cloudreve-testkit-$VERSION.tgz" \
+            "release/.artifacts/packages/cloudreve-testkit-$VERSION.tgz.sha256" \
+            --target "$CANDIDATE" --generate-notes --title "v$VERSION"

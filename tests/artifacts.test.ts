@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { realpath, mkdtemp, readFile, rm, symlink, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import {
   artifactRecord,
   digest,
@@ -77,7 +77,7 @@ it("rejects redirected vendor directories and wrong filename", async () => {
   };
 
   await mkdir(join(dir, "real"));
-  await symlink(join(dir, "real"), join(dir, "vendor"));
+  await symlink(join(dir, "real"), join(dir, "vendor"), "junction");
 
   await expect(vendorArtifact(source, dir, record)).rejects.toThrow("redirected");
 
@@ -105,7 +105,7 @@ it("rejects every malformed identity field", () => {
 });
 
 it("requires a proper child for integration checkout paths", () => {
-  expect(ownedProject("/tmp/run", "sdk")).toBe("/tmp/run/sdk");
+  expect(ownedProject("/tmp/run", "sdk")).toBe(resolve("/tmp/run/sdk"));
 
   for (const path of ["..", ".", "/other"]) {
     expect(() => ownedProject("/tmp/run", path)).toThrow();

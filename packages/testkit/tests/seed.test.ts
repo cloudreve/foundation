@@ -74,7 +74,10 @@ it("creates private credentials, registers both identities and reuses them witho
 
   expect(saved.email).toBe("admin@cloudreve.test");
   expect(saved.password).toHaveLength(32);
-  expect((await stat(f.credentialsFile)).mode & 0o777).toBe(0o600);
+
+  if (process.platform !== "win32") {
+    expect((await stat(f.credentialsFile)).mode & 0o777).toBe(0o600);
+  }
 
   const settings = n.fetch.mock.calls.find(([url]) => String(url).endsWith("/admin/settings"))!;
 

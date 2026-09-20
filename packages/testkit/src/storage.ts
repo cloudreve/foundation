@@ -19,7 +19,12 @@ export async function directory(path: string): Promise<string> {
 export async function readPrivate(path: string): Promise<unknown> {
   const info = await lstat(path);
 
-  if (!info.isFile() || info.isSymbolicLink() || (info.mode & 0o077) !== 0) {
+  // Windows file permissions use inherited ACLs rather than POSIX mode bits.
+  if (
+    !info.isFile() ||
+    info.isSymbolicLink() ||
+    (process.platform !== "win32" && (info.mode & 0o077) !== 0)
+  ) {
     throw new Error("Expected a regular private fixture file");
   }
 

@@ -102,7 +102,11 @@ it("owns ephemeral assembly, readiness publication and idempotent cleanup", asyn
   expect(h.seed).toHaveBeenCalledOnce();
   expect(await readFixture(output, owner)).toEqual(lease.manifest);
   expect(lease.manifest.network).toBe("opaque-network");
-  expect((await stat(output)).mode & 0o777).toBe(0o600);
+
+  if (process.platform !== "win32") {
+    expect((await stat(output)).mode & 0o777).toBe(0o600);
+  }
+
   await expect(startCommunity({ owner, output }, h.io)).rejects.toThrow();
   await controlFixture(lease.manifest, "pause", h.io);
   expect(h.driver.control).toHaveBeenCalledWith(lease.manifest, "pause");
@@ -245,10 +249,14 @@ it("validates opaque manifests, adjacent credential paths and private storage wi
   expect(() => runName("bad/name")).toThrow();
   await writeFile(path, "{", { mode: 0o600 });
   await expect(readPrivate(path)).rejects.toThrow();
-  await chmod(path, 0o644);
-  await expect(readPrivate(path)).rejects.toThrow("private");
+
+  if (process.platform !== "win32") {
+    await chmod(path, 0o644);
+    await expect(readPrivate(path)).rejects.toThrow("private");
+  }
+
   await mkdir(join(owner, "actual"));
-  await symlink(join(owner, "actual"), join(owner, "redirect"));
+  await symlink(join(owner, "actual"), join(owner, "redirect"), "junction");
 
   await expect(directory(join(owner, "redirect"))).rejects.toThrow("Redirected");
 

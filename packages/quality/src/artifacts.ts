@@ -11,7 +11,7 @@ import {
   realpath,
   writeFile,
 } from "node:fs/promises";
-import { basename, dirname, resolve, relative, isAbsolute } from "node:path";
+import { basename, dirname, resolve, relative, isAbsolute, sep, posix } from "node:path";
 
 const execute = promisify(execFile);
 
@@ -27,12 +27,12 @@ async function dependencyBinary(
   name: string,
   dependencies: ReadonlySet<string>,
 ): Promise<boolean> {
-  if (dirname(name) !== "node_modules/.bin") {
+  if (posix.dirname(name) !== "node_modules/.bin") {
     return false;
   }
 
   const target = resolve(dirname(resolve(root, name)), await readlink(resolve(root, name)));
-  const dependency = [...dependencies].find((path) => target.startsWith(resolve(root, path) + "/"));
+  const dependency = [...dependencies].find((path) => target.startsWith(resolve(root, path) + sep));
 
   if (!dependency) {
     return false;
