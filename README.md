@@ -1,27 +1,33 @@
 # Cloudreve Foundation
 
+The development infrastructure behind Cloudreve projects. Shared code quality, package verification, and isolated Community fixtures—independent of application runtime code.
+
 > [!IMPORTANT]
 > Under active development. Features and interfaces may change. Stay tuned for updates.
 
-Shared development infrastructure for Cloudreve projects. Independent packages for code quality, package verification, and isolated Community test fixtures.
+[Releases](https://github.com/cloudreve/foundation/releases) · [Contributing](CONTRIBUTING.md) · [MIT](LICENSE)
 
-| Package                                  | Scope                                                                     |
-| ---------------------------------------- | ------------------------------------------------------------------------- |
-| [`@cloudreve/quality`](packages/quality) | ESLint, Prettier, module boundaries, artifact verification                |
-| [`@cloudreve/testkit`](packages/testkit) | Fixture lifecycle, Docker adapters, authentication and storage test setup |
+## Packages
 
-Foundation packages are development dependencies. Application runtime code and platform integrations belong to their respective projects.
+| Package                                    | Responsibility                                                                          |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| **[@cloudreve/quality](packages/quality)** | ESLint, Prettier, module boundaries, and package artifact verification.                 |
+| **[@cloudreve/testkit](packages/testkit)** | Isolated Docker fixtures, lifecycle management, authentication, and storage test setup. |
 
-## Installation
+Both are development dependencies. Each consumer owns its application architecture and platform integrations.
+
+## Install
 
 ```sh
 bun add --dev https://github.com/cloudreve/foundation/releases/download/v1.0.0/cloudreve-quality-1.0.0.tgz
 bun add --dev https://github.com/cloudreve/foundation/releases/download/v1.0.0/cloudreve-testkit-1.0.0.tgz
 ```
 
-[Releases](https://github.com/cloudreve/foundation/releases) include versioned tarballs and SHA-256 checksums. SDK and CLI consume these development packages without sibling source imports.
+Versioned archives and SHA-256 checksums are available in [releases](https://github.com/cloudreve/foundation/releases).
 
 ## Development
+
+Tools are pinned with [mise](https://mise.jdx.dev/); dependencies use Bun.
 
 ```sh
 mise install
@@ -30,17 +36,6 @@ mise run check
 mise run package:check
 ```
 
-`mise run format` applies shared formatting rules. Checks include lint, types, module boundaries, package consumers, and a 95% minimum for statements, branches, functions, and lines across all production code.
+---
 
-## Docker validation
-
-```sh
-mise run test:e2e
-mise run ci:local -- --job quality --matrix os:ubuntu-latest
-```
-
-Native Docker tests cover persistent and ephemeral fixture lifecycle, isolation, recovery, and cleanup. GitHub Actions runs unit, build, and package checks on Linux, macOS, and Windows. Docker lifecycle checks run separately on Linux. Test state and reports stay under `.artifacts/`.
-
-[Architecture and contribution guide](CONTRIBUTING.md) · [MIT license](LICENSE)
-
-The release workflow accepts an explicit stable version or a patch, minor, or major increment. All three platforms validate the exact candidate before one GitHub release is created.
+[Cloudreve](https://github.com/cloudreve/cloudreve) · **Foundation** · [SDK](https://github.com/cloudreve/sdk) · [CLI](https://github.com/cloudreve/cli)
