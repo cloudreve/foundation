@@ -17,7 +17,7 @@ concurrency:
   group: foundation-release
   cancel-in-progress: false
 jobs:
-  prepare:
+  version:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-24.04
     permissions:
@@ -82,19 +82,19 @@ jobs:
           fi
           echo "ref=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
   validate:
-    needs: prepare
+    needs: version
     uses: ./.github/workflows/ci.yml
     with:
-      ref: ${{ needs.prepare.outputs.ref }}
+      ref: ${{ needs.version.outputs.ref }}
   publish:
-    needs: [prepare, validate]
+    needs: [version, validate]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.prepare.outputs.ref }}
+          ref: ${{ needs.version.outputs.ref }}
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
@@ -103,8 +103,8 @@ jobs:
       - name: Publish validated packages
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.prepare.outputs.version }}
-          CANDIDATE: ${{ needs.prepare.outputs.ref }}
+          VERSION: ${{ needs.version.outputs.version }}
+          CANDIDATE: ${{ needs.version.outputs.ref }}
         run: |
           cd release/.artifacts/packages
           sha256sum --check "cloudreve-quality-$VERSION.tgz.sha256" "cloudreve-testkit-$VERSION.tgz.sha256"

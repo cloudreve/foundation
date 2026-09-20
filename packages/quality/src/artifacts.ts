@@ -199,7 +199,7 @@ export async function verifyInstalledPackage(tarball: string, installed: string)
   const entries = stdout
     .toString("utf8")
     .trim()
-    .split("\n")
+    .split(/\r?\n/)
     .filter((name) => !name.endsWith("/"));
 
   if (!entries.length) {

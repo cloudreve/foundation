@@ -42,7 +42,7 @@ try {
 
     const entries = execFileSync(tarExecutable, ["-tzf", archive], { encoding: "utf8" })
       .trim()
-      .split("\n");
+      .split(/\r?\n/);
 
     assert(
       entries.every((entry) =>

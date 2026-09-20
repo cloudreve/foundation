@@ -8,13 +8,13 @@ import { validateCredentialPaths, validateFixture, type Fixture } from "./manife
 export async function directory(path: string): Promise<string> {
   const target = resolve(path);
 
-  await mkdir(target, { recursive: true, mode: 0o700 });
+  const created = await mkdir(target, { recursive: true, mode: 0o700 });
 
   if ((await realpath(target)) !== target) {
     throw new Error("Redirected fixture directory");
   }
 
-  await windowsPrivacy(target, true, true);
+  await windowsPrivacy(target, created !== undefined, true);
 
   return target;
 }
