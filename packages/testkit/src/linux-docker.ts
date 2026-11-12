@@ -13,6 +13,7 @@ interface DockerInfo {
   Id: string;
   Image: string;
   Config: { Image: string; Labels?: Record<string, string> };
+  HostConfig?: { NetworkMode?: string };
   Labels?: Record<string, string>;
   State: {
     Running: boolean;
@@ -258,11 +259,18 @@ export function linuxDockerDriver(runId: string) {
   assert.match(runId, /^[a-z0-9][a-z0-9_-]{0,100}$/);
 
   const container = existsSync("/.dockerenv") || existsSync("/run/.containerenv");
-  const runner = container ? inspect("container", hostname()) : null;
+
+  // Executors may decouple the job hostname from the docker container id
+  // (e.g. --hostname ci-runner-N on kern-job-<uuid>-N). CR_JOB_CONTAINER
+  // carries the docker-visible name or id when they differ.
+  const runnerOverride = process.env.CR_JOB_CONTAINER || undefined;
+  const job = container ? inspect("container", runnerOverride || hostname()) : null;
 
   if (container) {
     assert(
-      runner?.Id.startsWith(hostname()) && runner.State.Running,
+      job !== null &&
+        job.State.Running &&
+        (runnerOverride !== undefined || job.Id.startsWith(hostname())),
       "Cannot identify current Linux job container",
     );
   } else {
@@ -279,6 +287,14 @@ export function linuxDockerDriver(runId: string) {
 
     assert(endpoint.startsWith("unix://"), "Native Linux E2E requires a local Docker daemon");
   }
+
+  // A job container sharing a foreign network namespace (--network host or
+  // --network container:<id>) cannot join fixture networks; fall back to the
+  // native published-port transport, which that netns reaches directly.
+  const jobNetMode = job?.HostConfig?.NetworkMode ?? "";
+
+  const runner =
+    job !== null && jobNetMode !== "host" && !jobNetMode.startsWith("container:") ? job : null;
 
   const owned = (info: DockerInfo | null, fixture: Owner): void => {
     assert(info, "Fixture resource is absent");

@@ -51,15 +51,19 @@ vi.mock("node:child_process", () => ({
       }
     });
 
-    const runner = state.resources.container!["a".repeat(64)];
-
     if (args[0] === "context") {
       return ok(state.endpoint);
     }
 
+    const lookup = (kind: string, id: string) => {
+      const pool = state.resources[kind];
+
+      return pool?.[id] ?? Object.values(pool ?? {}).find((r: any) => r?.Id === id);
+    };
+
     if (args[1] === "inspect") {
       const id = args[2] === "aaaaaaaaaaaa" ? "a".repeat(64) : args[2]!;
-      const info = state.resources[args[0]!]?.[id];
+      const info = lookup(args[0]!, id);
 
       return info ? ok(JSON.stringify([info])) : fail("No such object");
     }
@@ -79,9 +83,13 @@ vi.mock("node:child_process", () => ({
 
     if (args[0] === "network" && args[1] === "connect") {
       const id = args[2]!;
+      const target = args[3]!;
 
-      state.resources.network![id].Containers[runner.Id] = {};
-      runner.NetworkSettings.Networks[id] = { IPAddress: "127.0.0.1" };
+      state.resources.network![id].Containers[target] = {};
+
+      lookup("container", target).NetworkSettings.Networks[id] = {
+        IPAddress: "127.0.0.1",
+      };
 
       return ok();
     }
@@ -456,5 +464,70 @@ it("still removes failed sidecars when writing diagnostics fails", async () => {
   ).rejects.toThrow("disk full");
 
   expect(Object.keys(state.resources.container!)).toEqual(["a".repeat(64), resources.containerId]);
+  await io.driver.stop(fixture, true);
+});
+
+it("resolves the job container via CR_JOB_CONTAINER and uses published ports on a shared netns", async () => {
+  vi.stubEnv("CR_JOB_CONTAINER", "kern-job-abc-1");
+
+  state.resources.container!["kern-job-abc-1"] = {
+    Id: "f".repeat(64),
+    State: { Running: true },
+    HostConfig: { NetworkMode: "host" },
+    NetworkSettings: { Networks: {} },
+  };
+
+  const io = linuxDockerDriver("ci-test");
+  const resources = await io.driver.start({ ...spec, project: "hostnet-project" }, true);
+  const fixture = { ...spec, project: "hostnet-project", ...resources } as never;
+
+  await io.service(fixture, { name: "search", image: spec.image, port: 7700 });
+
+  expect(io.runnerMode).toBe("native");
+  expect(io.runnerAddress(fixture)).toBe("127.0.0.1");
+
+  expect(
+    state.calls.some(
+      (args) => args[0] === "container" && args[1] === "inspect" && args[2] === "kern-job-abc-1",
+    ),
+  ).toBe(true);
+
+  expect(
+    state.calls.some(
+      (args) => args[0] === "network" && ["connect", "disconnect"].includes(args[1]!),
+    ),
+  ).toBe(false);
+
+  const creates = state.calls.filter((args) => args[0] === "create");
+
+  expect(creates[0]).toContain("127.0.0.1::5212");
+  expect(creates[1]).toContain("127.0.0.1::7700");
+
+  await io.driver.stop(fixture, true);
+});
+
+it("keeps direct container transport when CR_JOB_CONTAINER names a bridged job", async () => {
+  vi.stubEnv("CR_JOB_CONTAINER", "job-bridge-1");
+
+  state.resources.container!["job-bridge-1"] = {
+    Id: "e".repeat(64),
+    State: { Running: true },
+    HostConfig: { NetworkMode: "job-net" },
+    NetworkSettings: { Networks: {} },
+  };
+
+  const io = linuxDockerDriver("ci-test");
+  const resources = await io.driver.start({ ...spec, project: "bridged-project" }, true);
+  const fixture = { ...spec, project: "bridged-project", ...resources } as never;
+
+  expect(io.runnerMode).toBe("container");
+  expect(io.runnerAddress(fixture)).toBe("127.0.0.1");
+
+  expect(state.calls.some((args) => args[0] === "network" && args[1] === "connect")).toBe(true);
+
+  const creates = state.calls.filter((args) => args[0] === "create");
+
+  expect(creates[0]).not.toContain("--publish");
+
   await io.driver.stop(fixture, true);
 });
